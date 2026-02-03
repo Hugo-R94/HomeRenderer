@@ -1,15 +1,11 @@
 #include "HomeRenderer.hpp"
 
-#include "imgui.h"
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h>
-#include <iostream>
 
-GLFWwindow*    init_ImGUI()
+
+GLFWwindow*    init_ImGUI(Data data)
 {
    
-    GLFWwindow* window = glfwCreateWindow(1920, 1080, "HOME RENDERER", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(data.GetResx(), data.GetResy(), "HOME RENDERER", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();
@@ -35,12 +31,20 @@ void    cleanup_ImGUI(GLFWwindow* window)
     glfwTerminate();
 }
 
+
+
 int main()
 {
     if (!glfwInit())
         return 1;
-    GLFWwindow *window = init_ImGUI();
-    
+ 	
+    Data data;
+	std::cout << data.GetResx() << std::endl;
+	GLFWwindow *window = init_ImGUI(data);
+	float my_color[4];
+	for (int i = 0; i < 4 ; i++)
+		my_color[i] = 0.0f;
+	
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -48,25 +52,8 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
-        // ===== Fenêtre 1 =====
-        ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_Once);
-        ImGui::Begin("Fenêtre 1");
-        ImGui::Text("Position 50,50");
-        ImGui::End();
-
-        // ===== Fenêtre 2 =====
-        ImGui::SetNextWindowPos(ImVec2(300, 50), ImGuiCond_Once);
-        ImGui::Begin("Fenêtre 2");
-        ImGui::Text("Position 300,50");
-        ImGui::End();
-
-        // ===== Fenêtre 3 =====
-        ImGui::SetNextWindowPos(ImVec2(550, 50), ImGuiCond_Once);
-        ImGui::Begin("Fenêtre 3");
-        ImGui::Text("Position 550,50");
-        ImGui::End();
-
+		setup_bar_menu(window);
+		
         ImGui::Render();
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

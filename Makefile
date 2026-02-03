@@ -11,7 +11,9 @@ IMGUI_SRC = \
     imgui/backends/imgui_impl_glfw.cpp \
     imgui/backends/imgui_impl_opengl3.cpp
 
-SRC = srcs/test.cpp
+SRC = srcs/test.cpp\
+		srcs/Data.cpp\
+		srcs/UI/baseUI.cpp
 OBJ = $(SRC:.cpp=.o) $(IMGUI_SRC:.cpp=.o)
 
 NAME = HomeRenderer
