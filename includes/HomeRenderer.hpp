@@ -18,5 +18,5 @@ void draw_outliner(Data& data);
 void draw_proprieties(Data &data);
 void	handle_input(Data *data);
 void display_viewport(Data &data);
-
+void display_double_viewport(Data &data);
 #endif

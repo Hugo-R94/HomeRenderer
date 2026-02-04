@@ -60,7 +60,8 @@ int main()
         ImGui::NewFrame();
 		// update_data(data);
 		setup_bar_menu(window);
-		display_viewport(data);
+		// display_viewport(data);
+		display_double_viewport(data);
 		draw_outliner(data);
 		draw_proprieties(data);
 		
