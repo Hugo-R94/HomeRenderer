@@ -15,7 +15,13 @@ void	setup_bar_menu(GLFWwindow *window)
 					glfwSetWindowShouldClose(window, true);
 				ImGui::EndMenu();
 			}
-
+			if (ImGui::BeginMenu("Creation"))
+			{
+				ImGui::MenuItem("New cube");
+				ImGui::MenuItem("New sphere");
+				ImGui::MenuItem("New cylinder");
+				ImGui::EndMenu();
+			}
 			if (ImGui::BeginMenu("Édition"))
 			{
 				ImGui::MenuItem("Annuler", "Ctrl+Z");
@@ -28,7 +34,7 @@ void	setup_bar_menu(GLFWwindow *window)
 
 			if (ImGui::BeginMenu("Préférences"))
 			{
-				static int theme = 1; // 1=dark, 2=light, 3=classic
+				static int theme = 1;
 
 				if (ImGui::MenuItem("Dark mode", nullptr, theme == 1))
 					theme = 1;
@@ -55,10 +61,10 @@ void	setup_bar_menu(GLFWwindow *window)
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Superlatif"))
+			if (ImGui::BeginMenu("Aide"))
 			{
 				static bool dark_mode = true;
-				if (ImGui::MenuItem("PUTAIN", NULL, dark_mode))
+				if (ImGui::MenuItem("Documentation", NULL, dark_mode))
 				{
 					dark_mode = !dark_mode;
 					if (dark_mode)

@@ -15,6 +15,8 @@ class Data
 		int			GetResy();
 		void		setResx(int resx);
 		void		setResy(int resy);
+		bool	is_outliner_visible;
+		
 };
 
 

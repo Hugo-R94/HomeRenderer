@@ -13,7 +13,11 @@ IMGUI_SRC = \
 
 SRC = srcs/test.cpp\
 		srcs/Data.cpp\
-		srcs/UI/baseUI.cpp
+		srcs/UI/baseUI.cpp\
+		srcs/UI/Outliner.cpp\
+		srcs/inputs.cpp\
+		srcs/UI/viewport.cpp
+
 OBJ = $(SRC:.cpp=.o) $(IMGUI_SRC:.cpp=.o)
 
 NAME = HomeRenderer

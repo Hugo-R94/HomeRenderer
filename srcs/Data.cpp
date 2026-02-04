@@ -6,6 +6,7 @@ Data::Data()
 	const GLFWvidmode* screen = glfwGetVideoMode(glfwGetPrimaryMonitor());
 	_res_x  = screen->width;
 	_res_y = screen->height;
+	is_outliner_visible = true;
 }
 
 Data::~Data()

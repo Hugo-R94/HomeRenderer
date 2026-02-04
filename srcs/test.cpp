@@ -15,6 +15,7 @@ GLFWwindow*    init_ImGUI(Data data)
     glfwSwapInterval(1);
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+	// ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
@@ -31,7 +32,13 @@ void    cleanup_ImGUI(GLFWwindow* window)
     glfwTerminate();
 }
 
+void update_data(Data &data)
+{
+	ImGuiViewport* vp = ImGui::GetMainViewport();
+	data.setResx(vp->Size.x);
+	data.setResy(vp->Size.y);
 
+}
 
 int main()
 {
@@ -41,18 +48,21 @@ int main()
     Data data;
 	std::cout << data.GetResx() << std::endl;
 	GLFWwindow *window = init_ImGUI(data);
-	float my_color[4];
-	for (int i = 0; i < 4 ; i++)
-		my_color[i] = 0.0f;
 	
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-
+		handle_input(&data);
+		
+		
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+		// update_data(data);
 		setup_bar_menu(window);
+		display_viewport(data);
+		draw_outliner(data);
+		draw_proprieties(data);
 		
         ImGui::Render();
         glClear(GL_COLOR_BUFFER_BIT);
