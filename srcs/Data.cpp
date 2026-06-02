@@ -1,30 +1,44 @@
 #include "Data.hpp"
-#include "HomeRenderer.hpp"
 
-Data::Data()
+// ============================================================
+// Data Constructor & Destructor
+// ============================================================
+
+Data::Data():_meshID(0)
 {
-	const GLFWvidmode* screen = glfwGetVideoMode(glfwGetPrimaryMonitor());
-	_res_x  = screen->width;
-	_res_y = screen->height;
-	is_outliner_visible = true;
+    // Auto-détection de la résolution écran primaire
+    const GLFWvidmode* screen = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    if (screen)
+    {
+        _res_x = screen->width;
+        _res_y = screen->height;
+    }
+    is_outliner_visible = true;
 }
 
-Data::~Data()
+Data::~Data(){}
+
+// ============================================================
+// Accesseurs (Getters)
+// ============================================================
+
+// ============================================================
+// Mutateurs (Setters) 
+// ============================================================
+
+void Data::SetResx(int resx)
 {
+    if (resx > 0)
+        _res_x = resx;
 }
 
-int	Data::GetResx(){
-	return _res_x;
+void Data::SetResy(int resy)
+{
+    if (resy > 0)
+        _res_y = resy;  // ✅ CORRECTION du bug : était _res_x = resy;
 }
 
-int	Data::GetResy(){
-	return _res_y;
-}
+void Data::setMeshID(int meshID){_meshID = meshID;}
 
-void	Data::setResx(int resx){
-	_res_x = resx;
-}
+int Data::getMeshID() const{return _meshID;}
 
-void	Data::setResy(int resy){
-	_res_x = resy;
-}
