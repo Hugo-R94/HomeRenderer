@@ -153,9 +153,13 @@ std::vector<Mat4> calculateMVPs(std::vector<Mesh>& meshes, Cam camera, int W, in
 //     Vec4 r = mulMat4Vec4(M, {v.x, v.y, v.z, 0.0f});
 //     return {r.x, r.y, r.z};
 // }
-
+static Vec3 rotatedVertex(const Mat4& M, const Vec3& v)
+{
+    Vec4 r = mulMat4Vec4(M, {v.x, v.y, v.z, 0.0f});
+    return {r.x, r.y, r.z};
+}
 //render avec rasterisation
-std::vector<Triangle2D> renderAmbiant2(Mesh mesh , int W, int H, Mat4 MVP)
+std::vector<Triangle2D> renderAmbiant2(Mesh mesh, Cam camera, int W, int H, Mat4 MVP)
 {
     (void)H; (void)W;
     // mesh.updateMeshData();
@@ -169,16 +173,18 @@ std::vector<Triangle2D> renderAmbiant2(Mesh mesh , int W, int H, Mat4 MVP)
         int ib = faces[i].i[1].v;
         int ic = faces[i].i[2].v;
 
-        // Vec3 a = (mesh.getWorldVertices())[ia];
+        Vec3 a = (mesh.getWorldVertices())[ia];
 
         // utilise la normale locale de la face
         // Vec3 normal = faces[i].LocalNormal;
         // applique la rotation du mesh a la normale
+        Vec3 normal = faces[i].LocalNormal;
+        // applique la rotation du mesh a la normale
+        normal = rotatedVertex(MVP, normal);
 
-
-        // Vec3 toCamera = {camera.getPos().x-a.x, camera.getPos().y-a.y, camera.getPos().z-a.z};
-        // if (normal.z >= 0) continue;
-        // float dot = normal.x*toCamera.x + normal.y*toCamera.y + normal.z*toCamera.z;
+        Vec3 toCamera = {camera.getPos().x-a.x, camera.getPos().y-a.y, camera.getPos().z-a.z};
+        if (normal.z >= 0) continue;
+        float dot = normal.x*toCamera.x + normal.y*toCamera.y + normal.z*toCamera.z;
 
         const std::vector<Vec3>& localVerts = mesh.getVerticesLocal();
 
@@ -197,7 +203,7 @@ std::vector<Triangle2D> renderAmbiant2(Mesh mesh , int W, int H, Mat4 MVP)
         tri.c.x = pc.x;
         tri.c.y = pc.y;
         tri.c.depth = localVerts[ic].z;
-
+		tri.dot = dot;
         tris.push_back(tri);
     }
     return tris;
@@ -219,7 +225,7 @@ float edgeFunction (Vertex2D a, Vertex2D b, Vertex2D c)
 
 
 //fonction pour rasteriser un seul triangle calcul des coordonnee baricentrique w
-void rasterizeTriangle(Triangle2D triangle, int H, int W, std::vector<Pixel>& framebuffer, std::vector<float> zbuffer)
+void rasterizeTriangle(Triangle2D triangle, int H, int W, std::vector<Pixel>& framebuffer, std::vector<float> &zbuffer)
 {
     int minX = std::max(0,   (int)((std::min({triangle.a.x, triangle.b.x, triangle.c.x}) * 0.5f + 0.5f) * W));
     int maxX = std::min(W-1, (int)((std::max({triangle.a.x, triangle.b.x, triangle.c.x}) * 0.5f + 0.5f) * W));
@@ -257,27 +263,35 @@ void rasterizeTriangle(Triangle2D triangle, int H, int W, std::vector<Pixel>& fr
                 float b2 = w0 / area;
 
                 // Interpolation de la profondeur
-                float depth = w0 * triangle.a.depth
-                            + w1 * triangle.b.depth
-                            + w2 * triangle.c.depth;
+                float depth = b0 * triangle.a.depth
+                            + b1 * triangle.b.depth
+                            + b2 * triangle.c.depth;
+							
+    		    // float dot = normal.x*toCamera.x + normal.y*toCamera.y + normal.z*toCamera.z;
 
-                // Normalise depth en shade (ajuste les valeurs selon ta scène)
-                float shade = 1.0f - std::max(0.0f, std::min(1.0f, (depth + 5.0f) / 10.0f));
+				// Normal.z varie entre -1 et 1, on le ramène à [0, 1]
+				// Direction de lumière (à ajuster selon ta scène)
+
+				// float shade = (triangle.normal.z + 1.0f) / 2.0f;
+                // float shade = 1.0f - std::max(0.0f, std::min(1.0f, (depth + 5.0f) / 10.0f));
+				// std::cout << shade << std::endl;
                 // if (x % 3 == 0 && y %3 == 0)
                 //     std::cout << "barycentric coordinate : w0 = " << w0 << " | w1 = " << w1 << " | w2 = " << w2  <<  std::endl;
-
+				
                 // int idx = (y * W + x);
                 // utiliser les coordonnees barycentrique pour calculer la moyenne pondere de la depth 
+       			float shade = triangle.dot / (0.55 * 0.55) + 0.1;
 
                 int idx = (H - 1 - y) * W + x;
-                if(zbuffer[idx] >= depth)
+                if(depth < zbuffer[idx])
                 {
-                    // framebuffer[idx].r =  colourA.r * w0 + colourB.r * w1 + colourC.r * w2;
-                    // framebuffer[idx].g = colourA.g * w0 + colourB.g * w1 + colourC.g * w2;
-                    // framebuffer[idx].b = colourA.b * w0 + colourB.b * w1 + colourC.b * w2;
+                    // framebuffer[idx].r =  (colourA.r * w0 + colourB.r * w1 + colourC.r * w2) * shade;
+                    // framebuffer[idx].g = (colourA.g * w0 + colourB.g * w1 + colourC.g * w2) * shade;
+                    // framebuffer[idx].b = (colourA.b * w0 + colourB.b * w1 + colourC.b * w2) * shade;
                        framebuffer[idx].r =  shade * 255;
                         framebuffer[idx].g = shade * 255;
                         framebuffer[idx].b = shade * 255;
+						zbuffer[idx] = depth;
                
                 }
             }
@@ -296,7 +310,7 @@ void rasterizeTriangle(Triangle2D triangle, int H, int W, std::vector<Pixel>& fr
 // Cam.hpp - passer par référence
 void rasterizeMesh(Mesh mesh, Cam& camera, Mat4 MVP)
 {
-    std::vector<Triangle2D> tris = renderAmbiant2(mesh, camera.getCamW(), camera.getCamH(), MVP);
+    std::vector<Triangle2D> tris = renderAmbiant2(mesh,camera,  camera.getCamW(), camera.getCamH(), MVP);
     // std::cout << "tris count: " << tris.size() << std::endl;
     // if (tris.size() > 0)
     // {
@@ -401,7 +415,7 @@ int main(int ac, char **av)
     std::vector<Mesh> meshes;
     for (int i = 1; i < ac; i++)
     {
-        std::string path = "/home/hugz/Documents/PROJET_PERSO/HomeRenderer/models/";
+        std::string path = "./models/";
         path += av[i];
         meshes.push_back(Mesh(path));
     }

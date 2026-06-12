@@ -26,7 +26,7 @@ GLFWwindow* init_ImGUI(Data data)
     ImGui::CreateContext();
     
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // Activer le docking
+    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // Activer le docking
     
     ImGui::StyleColorsDark();
 

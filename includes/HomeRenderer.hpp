@@ -36,6 +36,8 @@ struct Vertex2D {
 
 struct Triangle2D {
     Vertex2D a, b, c;
+	Vec3 normal;
+	float dot;
 };
 
 struct Pixel {

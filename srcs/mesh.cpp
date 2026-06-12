@@ -143,6 +143,8 @@ std::vector<Vec3> *Mesh::CalculateWorldVertices()
 
 void Mesh::setDotFace(std::vector<float> dotlist){_dot = dotlist;}
 
+void Mesh::setNormalFace(Vec3 Normals, int id){_normals[id] = Normals;}
+
 void Mesh::setOriginCenter()
 {
     if (_verticesLocal.empty()) return;

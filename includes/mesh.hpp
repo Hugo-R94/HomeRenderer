@@ -44,6 +44,7 @@ public:
 	void	setScale(Vec3 scale);
 	void	setOriginCenter();
 	void	setCenter(Vec3 center);
+	void	setNormalFace(Vec3 normal, int id);
 	void 	setFaces(std::vector<Face> faces);
 	void 	setCulledFaces(std::vector<Face> faces);
 	// dans mesh.hpp
