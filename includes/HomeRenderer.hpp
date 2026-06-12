@@ -26,6 +26,22 @@
 
 struct Vec3 { float x, y, z;};
 struct Vec4{float x, y, z, w;};
+struct Tri{Vec3 p1,p2,p3;};
+struct Vertex2D {
+    float x, y;   // écran
+    float depth;  // z/w pour le z-buffer
+    // float u, v;   // UV pour les textures
+    // float nx, ny, nz; // normale interpolée pour le shading par pixel (smooth shading)
+};
+
+struct Triangle2D {
+    Vertex2D a, b, c;
+};
+
+struct Pixel {
+    uint8_t r,g,b;
+};
+
 struct Mat3 {float m[3][3];};
 struct Mat4 {float m[4][4];};
 

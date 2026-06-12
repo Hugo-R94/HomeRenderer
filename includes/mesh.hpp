@@ -26,6 +26,8 @@ private:
 	std::vector<Vec3>	_normals;
 	std::vector<Vec2>	_uvs;
 	std::vector<Face>	_faces;
+	std::vector<float> 	_dot;
+	std::vector<Face>	_culledFace;
 	std::string _pathObj;
 	Vec3				_center;
 	Vec3 				_scale;
@@ -42,15 +44,21 @@ public:
 	void	setScale(Vec3 scale);
 	void	setOriginCenter();
 	void	setCenter(Vec3 center);
+	void 	setFaces(std::vector<Face> faces);
+	void 	setCulledFaces(std::vector<Face> faces);
 	// dans mesh.hpp
 	void addVertexLocal(const Vec3& v) { _verticesLocal.push_back(v); }
 	void	loadMesh();
 	void updateMeshData();
 	// dans mesh.hpp
 	const std::vector<Face>& getFaces() const;
+	const std::vector<Face>& getCulledFaces() const;
 	const std::vector<Vec3>& getVerticesLocal() const;
 	const std::vector<Vec3>& getWorldVertices() const;
+	const std::vector<float>& getDotFace()const;
+	void setDotFace(std::vector<float> dotlist);
 	const Vec3& getCenter()const;
+	std::string getPath() const;
 };
 
 Vec3 rotatedVertex(const Mat3& M, const Vec3& v);
@@ -69,5 +77,9 @@ Mat4 projectionMatrix(float fov, float aspect, float near, float far);
 Mat4 viewMatrix(Vec3 camPos);
 void processInput(GLFWwindow *window, std::vector<Mesh> &meshes, int *displaymode, DataGlobal &data);
 Vec2 project(const Vec3& vertex, const Mat4& MVP);
+Mat4 rotationZ4(float a);
+Mat4 rotationY4(float a);
+Mat4 rotationX4(float a);
+void renderAmbiant1(Mesh mesh, Cam &camera , int W, int H, Mat4 MVP);
 
 #endif

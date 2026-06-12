@@ -1,5 +1,5 @@
 CXX = c++
-CXXFLAGS = -Wall -Wextra -std=c++14
+CXXFLAGS = -Wall -Wextra -std=c++14 -g
 
 # Includes directories
 INCLUDES = -Iincludes -Iimgui -Iglad/include

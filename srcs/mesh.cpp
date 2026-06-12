@@ -27,10 +27,11 @@ Index parseIndex(const std::string& token) {
 }
 
 const std::vector<Face>& Mesh::getFaces() const { return _faces; }
+const std::vector<Face>& Mesh::getCulledFaces() const { return _faces; }
 
 const std::vector<Vec3>& Mesh::getVerticesLocal() const { return _verticesLocal; }
 const std::vector<Vec3>& Mesh::getWorldVertices() const { return _verticesWorld; }
-
+const std::vector<float>& Mesh::getDotFace() const {return _dot;}
 
 void Mesh::loadMesh()
 {
@@ -106,6 +107,8 @@ const Vec3& Mesh::getMeshScale()
 	return _scale;
 }
 
+std::string Mesh::getPath()const{return _pathObj;}
+
 const Vec3& Mesh::getCenter()const{
     return  _center;
 }
@@ -127,19 +130,8 @@ Vec3 Mesh::CalculateWorldVertex(Vec3 vertex)
     return {result.x, result.y, result.z};
 }
 
-// Vec3 Mesh::CalculateWorldVertex(Vec3 vertex)
-// {
-//     // scale
-//     vertex = {getMeshScale().x * vertex.x,
-//               getMeshScale().y * vertex.y,
-//               getMeshScale().z * vertex.z};
-//     // rotate
-//     Mat3 R = buildRotationMatrix(getRot());
-//     vertex = rotatedVertex(R, vertex);
-//     // translate
-//     vertex = translatedVertex(getPos(), vertex);
-//     return vertex;
-// }
+void Mesh::setFaces(std::vector<Face> faces){_faces = faces;}
+void Mesh::setCulledFaces(std::vector<Face> faces){_culledFace = faces;}
 
 std::vector<Vec3> *Mesh::CalculateWorldVertices()
 {
@@ -149,7 +141,7 @@ std::vector<Vec3> *Mesh::CalculateWorldVertices()
     return &_verticesWorld;
 }
 
-
+void Mesh::setDotFace(std::vector<float> dotlist){_dot = dotlist;}
 
 void Mesh::setOriginCenter()
 {
