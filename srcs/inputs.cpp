@@ -8,25 +8,6 @@
  * 
  * @param data Pointeur vers les données application à modifier
  */
-void handle_input(Data* data)
-{
-    if (!data)
-        return;
-
-    // ====== TAB: Toggle Outliner Visibility ======
-    if (ImGui::IsKeyPressed(ImGuiKey_Tab, false))
-    {
-        data->is_outliner_visible = !data->is_outliner_visible;
-        std::cout << "[INPUT] Outliner visibility: " 
-                  << (data->is_outliner_visible ? "ON" : "OFF") << std::endl;
-    }
-
-    // ====== TODO: Ajouter d'autres raccourcis clavier ======
-    // - Ctrl+S: Save
-    // - Ctrl+Z: Undo
-    // - Ctrl+Y: Redo
-    // - Etc.
-}
 
 void processInput(GLFWwindow *window, std::vector<Mesh> &meshes,
                   int *displaymode, DataGlobal &data)
@@ -40,12 +21,12 @@ void processInput(GLFWwindow *window, std::vector<Mesh> &meshes,
         glfwSetWindowShouldClose(window, true);
 
     // Déplacement
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
         mesh.setPos({mesh.getPos().x,
                      mesh.getPos().y + 0.1f,
                      mesh.getPos().z});
 
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
         mesh.setPos({mesh.getPos().x,
                      mesh.getPos().y - 0.1f,
                      mesh.getPos().z});
@@ -71,12 +52,12 @@ void processInput(GLFWwindow *window, std::vector<Mesh> &meshes,
                      mesh.getPos().z - 0.1f});
 
     // Rotation
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         mesh.setRot({mesh.getRot().x,
                      mesh.getRot().y + 0.05f,
                      mesh.getRot().z});
 
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         mesh.setRot({mesh.getRot().x,
                      mesh.getRot().y - 0.05f,
                      mesh.getRot().z});

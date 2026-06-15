@@ -23,12 +23,13 @@ class Mesh : public Node3D
 private:
 	std::vector<Vec3>	_verticesLocal;
 	std::vector<Vec3>	_verticesWorld;
-	std::vector<Vec3>	_normals;
+	std::vector<Vec3>	_localVN;
+	std::vector<Vec3>	_WorldVN;
 	std::vector<Vec2>	_uvs;
 	std::vector<Face>	_faces;
 	std::vector<float> 	_dot;
 	std::vector<Face>	_culledFace;
-	std::string _pathObj;
+	std::string 		_pathObj;
 	Vec3				_center;
 	Vec3 				_scale;
 
@@ -55,6 +56,7 @@ public:
 	const std::vector<Face>& getFaces() const;
 	const std::vector<Face>& getCulledFaces() const;
 	const std::vector<Vec3>& getVerticesLocal() const;
+	const std::vector<Vec3>& getNormalsLocal() const;
 	const std::vector<Vec3>& getWorldVertices() const;
 	const std::vector<float>& getDotFace()const;
 	void setDotFace(std::vector<float> dotlist);

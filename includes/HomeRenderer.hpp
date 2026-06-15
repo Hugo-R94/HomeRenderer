@@ -24,14 +24,22 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
+struct Vec2 {float x, y;};
 struct Vec3 { float x, y, z;};
 struct Vec4{float x, y, z, w;};
 struct Tri{Vec3 p1,p2,p3;};
+
+struct Vertex3D {
+	Vec3	pos;
+	Vec3	vn;
+	Vec2	uv;
+};
+
 struct Vertex2D {
-    float x, y;   // écran
-    float depth;  // z/w pour le z-buffer
-    // float u, v;   // UV pour les textures
-    // float nx, ny, nz; // normale interpolée pour le shading par pixel (smooth shading)
+    float	x, y;
+    float	depth;
+	Vec3	vn;
+	Vec2	uv;
 };
 
 struct Triangle2D {
@@ -39,6 +47,11 @@ struct Triangle2D {
 	Vec3 normal;
 	float dot;
 };
+
+// struct Triangle3D {
+//     Index i[3];
+// 	Vec3 LocalNormal;	
+// }
 
 struct Pixel {
     uint8_t r,g,b;
@@ -50,7 +63,6 @@ struct Mat4 {float m[4][4];};
 // ============================================================
 // INTERNAL HEADERS
 // ============================================================
-#include "Data.hpp"
 #include "colors.hpp"
 #include "Node3D.hpp"
 #include "mesh.hpp"
@@ -72,7 +84,6 @@ struct Mat4 {float m[4][4];};
 // ============================================================
 // FORWARD DECLARATIONS
 // ============================================================
-class Data;
 class DataGlobal;
 struct ViewportRender;
 struct Square;
@@ -82,12 +93,7 @@ struct Vec2;
 // UI RENDER FUNCTIONS
 // ============================================================
 
-void RenderUI(GLFWwindow* window, Data& data);
 void render_BarMenu(GLFWwindow* window);
-void render_outliner(Data& data);
-void render_proprieties(Data& data);
-void display_double_viewport(Data& data);
-void display_viewport(Data& data);
 
 // ============================================================
 // RENDERING FUNCTIONS
@@ -108,10 +114,7 @@ void draw_square_rotate(const Square& square, Vec2 center);
 // INPUT & CORE FUNCTIONS
 // ============================================================
 
-void handle_input(Data* data);
-GLFWwindow* init_ImGUI(Data data);
 void cleanup_ImGUI(GLFWwindow* window);
-void update_data(Data& data);
 
 // ============================================================
 // ALIASES FOR BACKWARD COMPATIBILITY
@@ -123,8 +126,6 @@ using carre = Square;
 
 
 void setup_bar_menu(GLFWwindow* window);
-void draw_outliner(Data& data);
-void draw_proprieties(Data& data);
-
+float distance(Vec2 v1, Vec2 v2);
 #endif
 

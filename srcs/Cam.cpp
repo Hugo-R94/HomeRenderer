@@ -1,6 +1,6 @@
 #include "../includes/Cam.hpp"
 
-Cam::Cam(int fov) : Node3D(), _fov(fov){}
+Cam::Cam(int fov) : Node3D(), _fov(fov), _cam_H(800), _cam_W(1200){}
 
 Cam::~Cam(){
 	_cam_H = 800;

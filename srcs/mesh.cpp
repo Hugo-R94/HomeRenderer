@@ -23,6 +23,7 @@ Index parseIndex(const std::string& token) {
         }
         i++;
     }
+	// std::cout << "index : v = " << idx.v << " | vt  = " << idx.vt << " | vn = " << idx.vn << std::endl;
     return idx;
 }
 
@@ -31,74 +32,159 @@ const std::vector<Face>& Mesh::getCulledFaces() const { return _faces; }
 
 const std::vector<Vec3>& Mesh::getVerticesLocal() const { return _verticesLocal; }
 const std::vector<Vec3>& Mesh::getWorldVertices() const { return _verticesWorld; }
+const std::vector<Vec3>& Mesh::getNormalsLocal() const { return _localVN; }
 const std::vector<float>& Mesh::getDotFace() const {return _dot;}
+
+// void Mesh::loadMesh()
+// {
+//     std::ifstream file(_pathObj);
+//     if (!file.is_open())
+//         std::cout << "ERREUR : impossible d'ouvrir " << _pathObj << std::endl;
+//     std::string line;
+//     while (std::getline(file, line))
+//     {
+        
+//         std::istringstream ss(line);
+//         std::string token;
+//         ss >> token;
+//         if (token == "v")
+//         {
+//             Vec3 v;
+//             ss >> v.x >> v.y >> v.z;
+//             _verticesLocal.push_back(v); // local, pas world
+//         }
+//         else if (token == "vn")
+//         {
+//             Vec3 n;
+//             ss >> n.x >> n.y >> n.z;
+//             _localVN.push_back(n);
+//         }
+//         else if (token == "vt")
+//         {
+//             Vec2 uv;
+//             ss >> uv.x >> uv.y;
+//             _uvs.push_back(uv);
+//         }
+//         else if (token == "f")
+//         {
+//             std::vector<Index> polyIndices;
+//             std::string t;
+//             while (ss >> t)
+//                 polyIndices.push_back(parseIndex(t));
+//             for (size_t i = 1; i + 1 < polyIndices.size(); i++)
+//             {
+//                 Face face;
+//                 face.i[0] = polyIndices[0];
+//                 face.i[1] = polyIndices[i];
+//                 face.i[2] = polyIndices[i + 1];
+
+//                 // calcul normale locale
+//                 Vec3 a = _verticesLocal[face.i[0].v];
+//                 Vec3 b = _verticesLocal[face.i[1].v];
+//                 Vec3 c = _verticesLocal[face.i[2].v];
+
+//                 Vec3 ab = {b.x-a.x, b.y-a.y, b.z-a.z};
+//                 Vec3 ac = {c.x-a.x, c.y-a.y, c.z-a.z};
+
+//                 // ab × ac (et non ac × ab)
+//                 face.LocalNormal = {
+//                     ab.y*ac.z - ab.z*ac.y,
+//                     ab.z*ac.x - ab.x*ac.z,
+//                     ab.x*ac.y - ab.y*ac.x
+//                 };
+
+//                 _faces.push_back(face);
+//             }
+//         }
+//     }
+//     setOriginCenter();
+//     setPos({0.0f, 0.0f, 5.0f}); //spawn en face de la camera
+//     setRot({0.0f, 3.5f, 0.0f});
+//     setScale({3.0f, 3.0f, 3.0f});//size visible
+// }
 
 void Mesh::loadMesh()
 {
     std::ifstream file(_pathObj);
     if (!file.is_open())
+    {
         std::cout << "ERREUR : impossible d'ouvrir " << _pathObj << std::endl;
+        return;
+    }
+
     std::string line;
+
+    std::vector<Vec3> positions;
+    std::vector<Vec3> normals;
+    std::vector<Vec2> uvs;
+
     while (std::getline(file, line))
     {
-        
         std::istringstream ss(line);
         std::string token;
         ss >> token;
+
         if (token == "v")
         {
             Vec3 v;
             ss >> v.x >> v.y >> v.z;
-            _verticesLocal.push_back(v); // local, pas world
+            positions.push_back(v);
         }
         else if (token == "vn")
         {
             Vec3 n;
             ss >> n.x >> n.y >> n.z;
-            _normals.push_back(n);
+            normals.push_back(n);
         }
         else if (token == "vt")
         {
             Vec2 uv;
             ss >> uv.x >> uv.y;
-            _uvs.push_back(uv);
+            uvs.push_back(uv);
         }
         else if (token == "f")
         {
             std::vector<Index> polyIndices;
             std::string t;
+
             while (ss >> t)
                 polyIndices.push_back(parseIndex(t));
+
             for (size_t i = 1; i + 1 < polyIndices.size(); i++)
             {
                 Face face;
+
                 face.i[0] = polyIndices[0];
                 face.i[1] = polyIndices[i];
                 face.i[2] = polyIndices[i + 1];
 
-                // calcul normale locale
-                Vec3 a = _verticesLocal[face.i[0].v];
-                Vec3 b = _verticesLocal[face.i[1].v];
-                Vec3 c = _verticesLocal[face.i[2].v];
+                Vec3 a = positions[face.i[0].v];
+                Vec3 b = positions[face.i[1].v];
+                Vec3 c = positions[face.i[2].v];
 
-                Vec3 ab = {b.x-a.x, b.y-a.y, b.z-a.z};
-                Vec3 ac = {c.x-a.x, c.y-a.y, c.z-a.z};
+                Vec3 ab = { b.x - a.x, b.y - a.y, b.z - a.z };
+                Vec3 ac = { c.x - a.x, c.y - a.y, c.z - a.z };
 
-                // ab × ac (et non ac × ab)
                 face.LocalNormal = {
-                    ab.y*ac.z - ab.z*ac.y,
-                    ab.z*ac.x - ab.x*ac.z,
-                    ab.x*ac.y - ab.y*ac.x
+                    ab.y * ac.z - ab.z * ac.y,
+                    ab.z * ac.x - ab.x * ac.z,
+                    ab.x * ac.y - ab.y * ac.x
                 };
 
                 _faces.push_back(face);
             }
         }
     }
+
+    // IMPORTANT : copy positions into your mesh storage
+    _verticesLocal = positions;
+    _localVN = normals;
+    _uvs = uvs;
+
     setOriginCenter();
-    setPos({0.0f, 0.0f, 5.0f}); //spawn en face de la camera
+    setPos({0.0f, 0.0f, 5.0f});
     setRot({0.0f, 3.5f, 0.0f});
-    setScale({3.0f, 3.0f, 3.0f});//size visible
+    setScale({3.0f, 3.0f, 3.0f});
 }
 
 //getter
@@ -143,7 +229,7 @@ std::vector<Vec3> *Mesh::CalculateWorldVertices()
 
 void Mesh::setDotFace(std::vector<float> dotlist){_dot = dotlist;}
 
-void Mesh::setNormalFace(Vec3 Normals, int id){_normals[id] = Normals;}
+void Mesh::setNormalFace(Vec3 Normals, int id){_localVN[id] = Normals;}
 
 void Mesh::setOriginCenter()
 {

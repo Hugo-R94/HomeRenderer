@@ -34,7 +34,7 @@ Mat4 rotationY4(float a) {
 Mat4 rotationZ4(float a) {
     return {{
         {cosf(a), -sinf(a), 0, 0},//x
-        {sinf(a),  cosf(a), 0, 0},//y
+        {-sinf(a),  -cosf(a), 0, 0},//y
         {      0,        0, 1, 0},//z
         {      0,        0, 0, 1}
     }};
@@ -99,7 +99,7 @@ Mat4 viewMatrix(Vec3 camPos) {
     return {{
         {1, 0, 0, -camPos.x},
         {0, 1, 0, -camPos.y},
-        {0, 0, -1, camPos.z},
+        {0, 0, 1, -camPos.z},
         {0, 0, 0,          1}
     }};
 }
@@ -107,9 +107,9 @@ Mat4 viewMatrix(Vec3 camPos) {
 Mat4 projectionMatrix(float fov, float aspect, float near, float far) {
     float f = 1.0f / tanf(fov / 2.0f);
     return {{
-        {f / aspect, 0,  0,                              0},
-        {0,          f,  0,                              0},
-        {0,          0,  (far + near) / (near - far),   (2 * far * near) / (near - far)},
-        {0,          0, -1,                              0}
+        {f / aspect, 0,  0,                             0},
+        {0,          f,  0,                             0},
+        {0,          0,  (far + near) / (near - far),  (2 * far * near) / (near - far)},
+        {0,          0,  -1,                            0}
     }};
 }

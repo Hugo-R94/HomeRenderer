@@ -17,7 +17,7 @@ IMGUI_SRC = \
 GLAD_SRC = glad/src/glad.c
 
 # Project source files
-SRC = srcs/main.cpp\
+SRC = srcs/main2.cpp\
     srcs/Data.cpp\
     srcs/test.cpp\
     srcs/inputs.cpp\
