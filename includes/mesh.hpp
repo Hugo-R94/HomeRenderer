@@ -32,6 +32,8 @@ private:
 	std::string 		_pathObj;
 	Vec3				_center;
 	Vec3 				_scale;
+	Texture				_txt;
+	Texture				_normalTxt;
 
 public:
 	Mesh(std::string path);
@@ -58,7 +60,10 @@ public:
 	const std::vector<Vec3>& getVerticesLocal() const;
 	const std::vector<Vec3>& getNormalsLocal() const;
 	const std::vector<Vec3>& getWorldVertices() const;
+	const std::vector<Vec2>& getUV() const;
 	const std::vector<float>& getDotFace()const;
+	const Texture& getTexture()const;
+	const Texture& getNormalTxt()const;
 	void setDotFace(std::vector<float> dotlist);
 	const Vec3& getCenter()const;
 	std::string getPath() const;

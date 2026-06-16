@@ -24,11 +24,18 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
+
 struct Vec2 {float x, y;};
 struct Vec3 { float x, y, z;};
 struct Vec4{float x, y, z, w;};
 struct Tri{Vec3 p1,p2,p3;};
-
+struct Texture
+{
+    int width;
+    int height;
+    int channels;
+    uint8_t* data;
+};
 struct Vertex3D {
 	Vec3	pos;
 	Vec3	vn;
@@ -74,6 +81,12 @@ struct Mat4 {float m[4][4];};
 #include "../includes/mesh.hpp" // adapte selon ton projet
 
 
+
+#include <algorithm>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+	
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -127,5 +140,8 @@ using carre = Square;
 
 void setup_bar_menu(GLFWwindow* window);
 float distance(Vec2 v1, Vec2 v2);
+std::vector<Mat4> calculateMVPs(std::vector<Mesh>& meshes, Cam camera, int W, int H);
+void rasterizeMesh(Mesh mesh, Cam& camera, Mat4 MVP);
+
 #endif
 

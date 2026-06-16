@@ -1,0 +1,19 @@
+# Simple plane (2 triangles), centered at origin
+
+v -1.0 0.0 -1.0
+v  1.0 0.0 -1.0
+v  1.0 0.0  1.0
+v -1.0 0.0  1.0
+
+# UV coordinates
+vt 0.0 0.0
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+
+# Normal (facing up)
+vn 0.0 1.0 0.0
+
+# Faces (two triangles)
+f 1/1/1 3/3/1 2/2/1
+f 1/1/1 4/4/1 3/3/1

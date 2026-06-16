@@ -31,7 +31,8 @@ SRC = srcs/main2.cpp\
     srcs/renderWireframe.cpp\
     srcs/renderAmbiant.cpp\
     srcs/Cam.cpp\
-    srcs/mat4.cpp
+    srcs/mat4.cpp\
+	srcs/rasterize.cpp
 
 # Object files
 OBJ = $(SRC:.cpp=.o) $(IMGUI_SRC:.cpp=.o) $(GLAD_SRC:.c=.o)

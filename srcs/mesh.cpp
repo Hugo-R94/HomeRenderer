@@ -1,6 +1,28 @@
 #include "HomeRenderer.hpp"
 #include <cmath>
+#define STB_IMAGE_IMPLEMENTATION
+#include "../stb/stb_image.h"
+Texture loadTexture(const std::string& path)
+{
+    Texture tex;
 
+    tex.data = stbi_load(
+        path.c_str(),
+        &tex.width,
+        &tex.height,
+        &tex.channels,
+        4 // force RGBA
+    );
+
+	if (!tex.data)
+	{
+		std::cout << "stb_image error: " << stbi_failure_reason() << std::endl;
+		throw std::runtime_error("Failed to load texture");
+	}
+
+    tex.channels = 4;
+    return tex;
+}
 Mesh::Mesh(std::string path): Node3D(), _pathObj(path){
     if (!path.empty())
         loadMesh();
@@ -34,6 +56,9 @@ const std::vector<Vec3>& Mesh::getVerticesLocal() const { return _verticesLocal;
 const std::vector<Vec3>& Mesh::getWorldVertices() const { return _verticesWorld; }
 const std::vector<Vec3>& Mesh::getNormalsLocal() const { return _localVN; }
 const std::vector<float>& Mesh::getDotFace() const {return _dot;}
+const std::vector<Vec2>& Mesh::getUV()const{return _uvs;}
+const Texture& Mesh::getTexture()const{return _txt;}
+const Texture& Mesh::getNormalTxt()const{return _normalTxt;}
 
 // void Mesh::loadMesh()
 // {
@@ -157,7 +182,7 @@ void Mesh::loadMesh()
                 face.i[0] = polyIndices[0];
                 face.i[1] = polyIndices[i];
                 face.i[2] = polyIndices[i + 1];
-
+				
                 Vec3 a = positions[face.i[0].v];
                 Vec3 b = positions[face.i[1].v];
                 Vec3 c = positions[face.i[2].v];
@@ -185,6 +210,8 @@ void Mesh::loadMesh()
     setPos({0.0f, 0.0f, 5.0f});
     setRot({0.0f, 3.5f, 0.0f});
     setScale({3.0f, 3.0f, 3.0f});
+	_txt = loadTexture("./textures/colorgrid.png");
+	_normalTxt = loadTexture("./textures/normaltest2.png");
 }
 
 //getter

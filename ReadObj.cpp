@@ -2,7 +2,17 @@
 #include <sstream>
 #include <vector>
 
-struct Vec3 { float x, y, z; };
+struct Vec3 { 
+	float x, y, z; 
+	Vec3 operator*(const Vec3& vec) const {
+			Vec3 result;
+			result.x = x * vec.x;
+			result.y = y * vec.y;
+			result.z = z * vec.z;
+			return result;
+	};
+};
+
 struct Vec2 { float u, v; };
 
 struct Index {
