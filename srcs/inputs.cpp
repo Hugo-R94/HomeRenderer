@@ -15,63 +15,65 @@ void processInput(GLFWwindow *window, std::vector<Mesh> &meshes,
     if (meshes.empty())
         return;
 
-    Mesh &mesh = meshes[data.getMeshID()];
+    for(size_t i = 0; i < meshes.size(); i++)
+    {
+        Mesh &mesh = meshes[i];
 
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, true);
 
-    // Déplacement
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        mesh.setPos({mesh.getPos().x,
-                     mesh.getPos().y + 0.1f,
-                     mesh.getPos().z});
+        // Déplacement
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+            mesh.setPos({mesh.getPos().x,
+                        mesh.getPos().y + 0.1f,
+                        mesh.getPos().z});
 
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        mesh.setPos({mesh.getPos().x,
-                     mesh.getPos().y - 0.1f,
-                     mesh.getPos().z});
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+            mesh.setPos({mesh.getPos().x,
+                        mesh.getPos().y - 0.1f,
+                        mesh.getPos().z});
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        mesh.setPos({mesh.getPos().x - 0.1f,
-                     mesh.getPos().y,
-                     mesh.getPos().z});
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+            mesh.setPos({mesh.getPos().x - 0.1f,
+                        mesh.getPos().y,
+                        mesh.getPos().z});
 
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        mesh.setPos({mesh.getPos().x + 0.1f,
-                     mesh.getPos().y,
-                     mesh.getPos().z});
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+            mesh.setPos({mesh.getPos().x + 0.1f,
+                        mesh.getPos().y,
+                        mesh.getPos().z});
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        mesh.setPos({mesh.getPos().x,
-                     mesh.getPos().y,
-                     mesh.getPos().z + 0.1f});
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            mesh.setPos({mesh.getPos().x,
+                        mesh.getPos().y,
+                        mesh.getPos().z + 0.1f});
 
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        mesh.setPos({mesh.getPos().x,
-                     mesh.getPos().y,
-                     mesh.getPos().z - 0.1f});
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            mesh.setPos({mesh.getPos().x,
+                        mesh.getPos().y,
+                        mesh.getPos().z - 0.1f});
 
-    // Rotation
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        mesh.setRot({mesh.getRot().x,
-                     mesh.getRot().y + 0.05f,
-                     mesh.getRot().z});
+        // Rotation
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            mesh.setRot({mesh.getRot().x,
+                        mesh.getRot().y + 0.05f,
+                        mesh.getRot().z});
 
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        mesh.setRot({mesh.getRot().x,
-                     mesh.getRot().y - 0.05f,
-                     mesh.getRot().z});
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            mesh.setRot({mesh.getRot().x,
+                        mesh.getRot().y - 0.05f,
+                        mesh.getRot().z});
 
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        mesh.setRot({mesh.getRot().x - 0.05f,
-                     mesh.getRot().y,
-                     mesh.getRot().z});
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+            mesh.setRot({mesh.getRot().x - 0.05f,
+                        mesh.getRot().y,
+                        mesh.getRot().z});
 
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        mesh.setRot({mesh.getRot().x + 0.05f,
-                     mesh.getRot().y,
-                     mesh.getRot().z});
-
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+            mesh.setRot({mesh.getRot().x + 0.05f,
+                        mesh.getRot().y,
+                        mesh.getRot().z});
+    }
     static bool mLastPressed = false;
     static bool tabLastPressed = false;
 

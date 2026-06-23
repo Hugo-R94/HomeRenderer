@@ -1,0 +1,13 @@
+# Blender 4.4.3 MTL File: 'SOLDAT.blend'
+# www.blender.org
+
+newmtl Material.008
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.170004 0.082707 0.032177
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump -bm 1.000000 /media/hugz/HDD_Hugz/0_Projet_3d/0_Blender/soldier/textures/1001_Normal.png

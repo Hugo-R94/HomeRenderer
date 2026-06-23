@@ -142,6 +142,7 @@ void setup_bar_menu(GLFWwindow* window);
 float distance(Vec2 v1, Vec2 v2);
 std::vector<Mat4> calculateMVPs(std::vector<Mesh>& meshes, Cam camera, int W, int H);
 void rasterizeMesh(Mesh mesh, Cam& camera, Mat4 MVP);
-
+// void rasterizeMeshes(const std::vector<Mesh>& meshes, Cam& camera, const std::vector<Mat4>& MVPs);
+void rasterizeMeshes(const std::vector<Mesh>& meshes, Cam& camera, const std::vector<Mat4>& MVPs, DataGlobal& data);
 #endif
 

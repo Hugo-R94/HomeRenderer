@@ -28,6 +28,13 @@ Mesh::Mesh(std::string path): Node3D(), _pathObj(path){
         loadMesh();
 }
 
+Mesh::Mesh(std::string path, std::string pathColorMap, std::string pathNormalMap) : Node3D(), _pathObj(path){
+     if (!path.empty())
+        loadMesh();
+   _txt = loadTexture(pathColorMap);
+    _normalTxt = loadTexture(pathNormalMap);
+}
+
 Mesh::~Mesh(){}
 
 // Parse un token de face : "1", "1/2", "1/2/3", "1//3"
@@ -50,7 +57,7 @@ Index parseIndex(const std::string& token) {
 }
 
 const std::vector<Face>& Mesh::getFaces() const { return _faces; }
-const std::vector<Face>& Mesh::getCulledFaces() const { return _faces; }
+const std::vector<Face>& Mesh::getCulledFaces() const { return _culledFace; }
 
 const std::vector<Vec3>& Mesh::getVerticesLocal() const { return _verticesLocal; }
 const std::vector<Vec3>& Mesh::getWorldVertices() const { return _verticesWorld; }
@@ -206,12 +213,12 @@ void Mesh::loadMesh()
     _localVN = normals;
     _uvs = uvs;
 
-    setOriginCenter();
-    setPos({0.0f, 0.0f, 5.0f});
+    // setOriginCenter();
+    setPos({0.0f, 5.0f, 15.0f});
     setRot({0.0f, 3.5f, 0.0f});
     setScale({3.0f, 3.0f, 3.0f});
-	_txt = loadTexture("./textures/colorgrid.png");
-	_normalTxt = loadTexture("./textures/normaltest2.png");
+	// _txt = loadTexture("./textures/colorgrid.png");
+	// _normalTxt = loadTexture("./textures/normaltest2.png");
 }
 
 //getter

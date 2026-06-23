@@ -37,6 +37,7 @@ private:
 
 public:
 	Mesh(std::string path);
+	Mesh(std::string path, std::string pathColorMap, std::string pathNormalMap);
 	~Mesh();
 
 	//getter

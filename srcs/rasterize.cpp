@@ -1,25 +1,37 @@
 #include "HomeRenderer.hpp"
+#include <thread>
 
 
-void backFaceCulling(Mesh& mesh, const Cam& camera)
+void backFaceCulling(Mesh& mesh, const Cam& camera, float nearPlane = 0.1f)
 {
     const std::vector<Face>& faces = mesh.getFaces();
-    const std::vector<Vec3>& v = mesh.getWorldVertices();
+    const std::vector<Vec3>& v     = mesh.getWorldVertices();
+    const std::vector<Vec3>& local = mesh.getVerticesLocal();
 
     std::vector<float> dotlist;
-    std::vector<Face> visible;
+    std::vector<Face>  visible;
     dotlist.reserve(faces.size());
     visible.reserve(faces.size());
 
-	Mat4 R = multiplyMat4(rotationZ4(mesh.getRot().z),
-				multiplyMat4(rotationY4(mesh.getRot().y),
-							rotationX4(mesh.getRot().x)));
-							
+    Mat4 R = multiplyMat4(rotationZ4(mesh.getRot().z),
+             multiplyMat4(rotationY4(mesh.getRot().y),
+                          rotationX4(mesh.getRot().x)));
+
     for (size_t i = 0; i < faces.size(); i++)
     {
         const Face& f = faces[i];
-        Vec3 a = v[f.i[0].v];
 
+        int ia = f.i[0].v;
+        int ib = f.i[1].v;
+        int ic = f.i[2].v;
+
+        float neaPlane = 0.00001f;
+        if (v[ia].z < nearPlane ||
+            v[ib].z < nearPlane ||
+            v[ic].z < nearPlane)
+            continue;
+
+        Vec3 a = v[ia];
         Vec4 n4 = mulMat4Vec4(R, {f.LocalNormal.x, f.LocalNormal.y, f.LocalNormal.z, 0.0f});
         Vec3 normal = {n4.x, n4.y, n4.z};
 
@@ -29,15 +41,15 @@ void backFaceCulling(Mesh& mesh, const Cam& camera)
             camera.getPos().z - a.z
         };
 
-		float dot = normal.x*toCamera.x + normal.y*toCamera.y + normal.z*toCamera.z;
-		if (dot > 0.00001f) continue;
-        dotlist.push_back(dot);
+        float dot = normal.x*toCamera.x + normal.y*toCamera.y + normal.z*toCamera.z;
 
-        if (dot > 0)
-            visible.push_back(f);
+        if (dot < -0.00001f) continue;
+
+        dotlist.push_back(dot);
+        visible.push_back(f);
     }
 
-    mesh.setDotFace(dotlist);   // ← manquait
+    mesh.setDotFace(dotlist);
     mesh.setCulledFaces(visible);
 }
 
@@ -77,70 +89,71 @@ float distanceVertex(Vec3 v1, Vec3 v2)
 }
 
 // avec rasterisation
-std::vector<Triangle2D> renderAmbiant2(Mesh mesh, Cam camera, int W, int H, Mat4 MVP)
+std::vector<Triangle2D> renderAmbiant2(const Mesh& mesh, const Cam& camera, int W, int H, const Mat4& MVP, DataGlobal& data)
 {
     (void)H; (void)W;
+    const std::vector<Face>& faces        = mesh.getCulledFaces();
+    const std::vector<Vec3>& worldVerts   = mesh.getWorldVertices();
+    const std::vector<Vec3>& localVerts   = mesh.getVerticesLocal();
+    const std::vector<Vec3>& normalsLocal = mesh.getNormalsLocal();
+    const std::vector<Vec2>& uvs          = mesh.getUV();
+    Vec3 camPos                           = camera.getPos();
 
-	std::vector<Triangle2D>tris;
-	
-    const std::vector<Face>& faces = mesh.getFaces();
-    for (size_t i = 0; i < faces.size(); i++)
+    std::vector<Triangle2D> tris(faces.size());
+
+    int numThreads = std::thread::hardware_concurrency();
+    if (numThreads <= 0) numThreads = 4;
+    int chunkSize = (faces.size() + numThreads - 1) / numThreads;
+
+    for (int t = 0; t < numThreads; t++)
     {
-        int ia = faces[i].i[0].v;
-        int ib = faces[i].i[1].v;
-        int ic = faces[i].i[2].v;
+        int iStart = t * chunkSize;
+        int iEnd   = std::min(iStart + chunkSize, (int)faces.size());
+        if (iStart >= iEnd) break;
 
-		
-        Vec3 a = (mesh.getWorldVertices())[ia];
+        data.pool.enqueue([=, &faces, &worldVerts, &localVerts, &normalsLocal, &uvs, &tris]()
+        {
+            for (int i = iStart; i < iEnd; i++)
+            {
+                int ia = faces[i].i[0].v;
+                int ib = faces[i].i[1].v;
+                int ic = faces[i].i[2].v;
 
-        // utilise la normale locale de la face
-        // Vec3 normal = faces[i].LocalNormal;
-        // applique la rotation du mesh a la normale
-        Vec3 normal = faces[i].LocalNormal;
-        // applique la rotation du mesh a la normale
-        normal = rotatedVertex(MVP, normal);
-		// Au lieu de toCamera depuis worldPos
-		Vec3 toCamera = {camera.getPos().x - a.x,
-						camera.getPos().y - a.y,
-						camera.getPos().z - a.z};
-        // Vec3 toCamera = {camera.getPos().x-a.x, camera.getPos().y-a.y, camera.getPos().z-a.z};
-        float dot = normal.x*toCamera.x + normal.y*toCamera.y + normal.z*toCamera.z;
-		
-        const std::vector<Vec3>& localVerts = mesh.getVerticesLocal();
+                Vec3 normal = rotatedVertex(MVP, faces[i].LocalNormal);
+                Vec3 toCamera = {
+                    camPos.x - worldVerts[ia].x,
+                    camPos.y - worldVerts[ia].y,
+                    camPos.z - worldVerts[ia].z
+                };
+                float dot = normal.x*toCamera.x + normal.y*toCamera.y + normal.z*toCamera.z;
 
-        Vec2 pa = project(localVerts[ia], MVP);
-        Vec2 pb = project(localVerts[ib], MVP);
-        Vec2 pc = project(localVerts[ic], MVP);
-        Triangle2D tri;
-        tri.a.x = pa.x;
-        tri.a.y = pa.y;
-        tri.a.depth = distanceVertex(mesh.getWorldVertices()[ia], camera.getPos());
-		tri.a.vn = rotatedVertex(MVP, mesh.getNormalsLocal()[faces[i].i[0].vn]);
-		tri.a.uv = mesh.getUV()[faces[i].i[0].vt];
-		// tri.a.vn = mesh.getNormalsLocal()[face.i[0].vt]
-        // tri.a.depth = localVerts[ia].z;
-		// std::cout
-		// 	<< "vn indices : "
-		// 	<< faces[i].i[0].vn << " "
-		// 	<< faces[i].i[1].vn << " "
-		// 	<< faces[i].i[2].vn << "\n";
-        tri.b.x = pb.x;
-        tri.b.y = pb.y;
-		tri.b.depth = distanceVertex(mesh.getWorldVertices()[ib], camera.getPos());
-		tri.b.vn = rotatedVertex(MVP, mesh.getNormalsLocal()[faces[i].i[1].vn]);
-		tri.b.uv = mesh.getUV()[faces[i].i[1].vt];
-        // tri.b.depth = localVerts[ib].z;
-		tri.normal = normal;
-        tri.c.x = pc.x;
-        tri.c.y = pc.y;
-		tri.c.depth = distanceVertex(mesh.getWorldVertices()[ic], camera.getPos());
-		tri.c.vn = rotatedVertex(MVP, mesh.getNormalsLocal()[faces[i].i[2].vn]);
-		tri.c.uv = mesh.getUV()[faces[i].i[2].vt];
-        // tri.c.depth = localVerts[ic].z;
-		tri.dot = dot;
-		
-        tris.push_back(tri);
+                Vec2 pa = project(localVerts[ia], MVP);
+                Vec2 pb = project(localVerts[ib], MVP);
+                Vec2 pc = project(localVerts[ic], MVP);
+
+                Triangle2D& tri = tris[i];
+                tri.a.x     = pa.x;
+                tri.a.y     = pa.y;
+                tri.a.depth = distanceVertex(worldVerts[ia], camPos);
+                tri.a.vn    = rotatedVertex(MVP, normalsLocal[faces[i].i[0].vn]);
+                tri.a.uv    = uvs[faces[i].i[0].vt];
+                tri.b.x     = pb.x;
+                tri.b.y     = pb.y;
+                tri.b.depth = distanceVertex(worldVerts[ib], camPos);
+                tri.b.vn    = rotatedVertex(MVP, normalsLocal[faces[i].i[1].vn]);
+                tri.b.uv    = uvs[faces[i].i[1].vt];
+                tri.c.x     = pc.x;
+                tri.c.y     = pc.y;
+                tri.c.depth = distanceVertex(worldVerts[ic], camPos);
+                tri.c.vn    = rotatedVertex(MVP, normalsLocal[faces[i].i[2].vn]);
+                tri.c.uv    = uvs[faces[i].i[2].vt];
+                tri.normal  = normal;
+                tri.dot     = dot;
+            }
+        });
     }
+
+    data.pool.wait();
     return tris;
 }
 
@@ -160,8 +173,8 @@ Pixel sampleTexture(const Texture& tex, Vec2 uv)
 		uv.x = std::max(0.0f, std::min(1.0f, uv.x));
 		uv.y = std::max(0.0f, std::min(1.0f, uv.y));
     int x = (int)(uv.x * (tex.width  - 1));
-    int y = (int)(uv.y * (tex.height - 1));
-
+    // int y = (int)(uv.y * (tex.height - 1));
+    int y = (int)((1.0f - uv.y) * (tex.height - 1));
     int idx = (y * tex.width + x) * 4;
 
     Pixel p;
@@ -171,7 +184,7 @@ Pixel sampleTexture(const Texture& tex, Vec2 uv)
 
     return p;
 }
-Vec3 calculateInterpolatedNormal(Triangle2D &triangle, float b0, float b1, float b2)
+Vec3 calculateInterpolatedNormal(const Triangle2D &triangle, float b0, float b1, float b2)
 {
 	Vec3 normalpx;
 
@@ -189,7 +202,7 @@ Vec3 calculateInterpolatedNormal(Triangle2D &triangle, float b0, float b1, float
 	return normalise(normalpx);
 }
 
-Vec2 calculateInterpolatedUV(Triangle2D &triangle, float b0, float b1, float b2)
+Vec2 calculateInterpolatedUV(const Triangle2D &triangle, float b0, float b1, float b2)
 {
 	Vec2 UVpx;
 	UVpx.x = b0 * triangle.a.uv.x + b1 * triangle.b.uv.x + b2 * triangle.c.uv.x;
@@ -197,13 +210,16 @@ Vec2 calculateInterpolatedUV(Triangle2D &triangle, float b0, float b1, float b2)
 	return UVpx;
 }
 
-Vec3 applyNormalMap(Vec3 normal, Vec2 uv, Texture txt)
+Vec3 applyNormalMap(const Vec3& normal, const Vec2& uv,const Texture& txt)
 {
 	Pixel p = sampleTexture(txt, uv);
 	Vec3 normalMap;
 	normalMap.x = p.b;
 	normalMap.y = p.g;
 	normalMap.z = p.r;
+    // normalMap.x = p.r;
+    // normalMap.y = p.g;
+    // normalMap.z = p.b;
 	normalMap = normalise(normalMap);
 	normalMap.x = (normalMap.x + normal.x) / 2;
 	normalMap.y = (normalMap.y + normal.y) / 2;
@@ -212,114 +228,239 @@ Vec3 applyNormalMap(Vec3 normal, Vec2 uv, Texture txt)
 }
 
 //fonction pour rasteriser un seul triangle calcul des coordonnee baricentrique w
-void rasterizeTriangle(Triangle2D triangle, int H, int W, std::vector<Pixel>& framebuffer, std::vector<float> &zbuffer, Texture txt, Texture normaltxt)
+// void rasterizeTriangle(Triangle2D triangle, int H, int W, std::vector<Pixel>& framebuffer, std::vector<float> &zbuffer, Texture txt, Texture normaltxt)
+// {
+//     int minX = std::max(0,   (int)((std::min({triangle.a.x, triangle.b.x, triangle.c.x}) * 0.5f + 0.5f) * W));
+//     int maxX = std::min(W-1, (int)((std::max({triangle.a.x, triangle.b.x, triangle.c.x}) * 0.5f + 0.5f) * W));
+//     int minY = std::max(0,   (int)((std::min({triangle.a.y, triangle.b.y, triangle.c.y}) * 0.5f + 0.5f) * H));
+//     int maxY = std::min(H-1, (int)((std::max({triangle.a.y, triangle.b.y, triangle.c.y}) * 0.5f + 0.5f) * H));
+
+//     float area = edgeFunction(triangle.a, triangle.b, triangle.c);
+//     if (area == 0) return;
+
+//     for (int y = minY; y <= maxY; y++)
+//     {
+//         for (int x = minX; x <= maxX; x++)
+//         {
+//             Pixel colourA = {255, 0, 0}; // Red
+//             Pixel colourB = {0, 255, 0}; // Red
+//             Pixel colourC = {0, 0, 255}; // Red
+
+//             Vertex2D p;
+//             p.x = (x + 0.5f) / W * 2.0f - 1.0f;
+//             p.y = (y + 0.5f) / H * 2.0f - 1.0f;
+
+//             float w0 = edgeFunction(triangle.a, triangle.b, p);
+//             float w1 = edgeFunction(triangle.b, triangle.c, p);
+//             float w2 = edgeFunction(triangle.c, triangle.a, p);
+
+//             if (w0 >= 0 && w1 >= 0 && w2 >= 0)
+//             {
+//                 // Coordonnées barycentriques
+//                 float b0 = w1 / area;
+//                 float b1 = w2 / area;
+//                 float b2 = w0 / area;
+
+//                 // Interpolation de la profondeur
+//                 float depth = b0 * triangle.a.depth
+//                             + b1 * triangle.b.depth
+//                             + b2 * triangle.c.depth;
+				
+// 				Vec3 normalpx = calculateInterpolatedNormal(triangle, b0, b1, b2);
+// 				Vec2 UVpx = calculateInterpolatedUV(triangle, b0, b1, b2);
+// 				normalpx = applyNormalMap(normalpx, UVpx, normaltxt);
+
+				
+// 				Pixel colour = sampleTexture(txt, UVpx);
+				
+// 				Vec3 lightDir = {0.0f, 0.0f, 1.0f};
+// 				lightDir = normalise(lightDir);
+// 				float shade = normalpx.x * lightDir.x + normalpx.y * lightDir.y + normalpx.z * lightDir.z;
+
+// 				int idx = (H - 1 - y) * W + x;
+// 				// shade = std::max(0.0f, shade);
+				
+//                 if(depth < zbuffer[idx])
+//                 {
+					
+// 					framebuffer[idx].r = (uint8_t)(colour.r * shade);
+// 					framebuffer[idx].g = (uint8_t)(colour.g * shade);
+// 					framebuffer[idx].b = (uint8_t)(colour.b * shade);
+// 					zbuffer[idx] = depth;
+               
+//                 }
+//             }
+//         }
+//     }
+// }
+
+
+// // Cam.hpp - passer par référence - probleme je rasterize quun mesh au lieu de tout les meshs
+// void rasterizeMesh(Mesh mesh, Cam& camera, Mat4 MVP)
+// {
+//     std::vector<Triangle2D> tris = renderAmbiant2(mesh,camera,  camera.getCamW(), camera.getCamH(), MVP);
+//     for (size_t i = 0; i < tris.size(); i++)
+//         rasterizeTriangle(tris[i], camera.getCamH(), camera.getCamW(), camera.getFramebuffer(), camera.getZbuffer(), mesh.getTexture(), mesh.getNormalTxt());
+// }
+void rasterizeTriangle(
+    const Triangle2D& triangle, int H, int W,
+    int xStart, int xEnd, Cam &camera,         // <-- bornes de la tuile
+    const Texture& txt, const Texture& normaltxt)
 {
-    int minX = std::max(0,   (int)((std::min({triangle.a.x, triangle.b.x, triangle.c.x}) * 0.5f + 0.5f) * W));
-    int maxX = std::min(W-1, (int)((std::max({triangle.a.x, triangle.b.x, triangle.c.x}) * 0.5f + 0.5f) * W));
-    int minY = std::max(0,   (int)((std::min({triangle.a.y, triangle.b.y, triangle.c.y}) * 0.5f + 0.5f) * H));
-    int maxY = std::min(H-1, (int)((std::max({triangle.a.y, triangle.b.y, triangle.c.y}) * 0.5f + 0.5f) * H));
+    int minX = std::max(xStart, (int)((std::min({triangle.a.x, triangle.b.x, triangle.c.x}) * 0.5f + 0.5f) * W));
+    int maxX = std::min(xEnd-1, (int)((std::max({triangle.a.x, triangle.b.x, triangle.c.x}) * 0.5f + 0.5f) * W));
+    int minY = std::max(0,      (int)((std::min({triangle.a.y, triangle.b.y, triangle.c.y}) * 0.5f + 0.5f) * H));
+    int maxY = std::min(H-1,    (int)((std::max({triangle.a.y, triangle.b.y, triangle.c.y}) * 0.5f + 0.5f) * H));
+
+    if (minX > maxX || minY > maxY) return; // triangle hors tuile
 
     float area = edgeFunction(triangle.a, triangle.b, triangle.c);
-    if (area == 0) return;
+    if (area == 0.0f) return;
+
+    Vec3 lightDir = normalise({0.0f, 0.0f, 1.0f}); // sorti de la double boucle
 
     for (int y = minY; y <= maxY; y++)
     {
         for (int x = minX; x <= maxX; x++)
         {
-            Pixel colourA = {255, 0, 0}; // Red
-            Pixel colourB = {0, 255, 0}; // Red
-            Pixel colourC = {0, 0, 255}; // Red
-
             Vertex2D p;
             p.x = (x + 0.5f) / W * 2.0f - 1.0f;
             p.y = (y + 0.5f) / H * 2.0f - 1.0f;
-
+            
             float w0 = edgeFunction(triangle.a, triangle.b, p);
             float w1 = edgeFunction(triangle.b, triangle.c, p);
             float w2 = edgeFunction(triangle.c, triangle.a, p);
 
             if (w0 >= 0 && w1 >= 0 && w2 >= 0)
             {
-                // Coordonnées barycentriques
                 float b0 = w1 / area;
                 float b1 = w2 / area;
                 float b2 = w0 / area;
 
-                // Interpolation de la profondeur
                 float depth = b0 * triangle.a.depth
                             + b1 * triangle.b.depth
                             + b2 * triangle.c.depth;
-				
-				Vec3 normalpx = calculateInterpolatedNormal(triangle, b0, b1, b2);
-				Vec2 UVpx = calculateInterpolatedUV(triangle, b0, b1, b2);
-				normalpx = applyNormalMap(normalpx, UVpx, normaltxt);
-
-				
-				Pixel colour = sampleTexture(txt, UVpx);
-				
-				Vec3 lightDir = {0.0f, 0.0f, 1.0f};
-				lightDir = normalise(lightDir);
-				float shade = normalpx.x * lightDir.x + normalpx.y * lightDir.y + normalpx.z * lightDir.z;
-
-				int idx = (H - 1 - y) * W + x;
-				// shade = std::max(0.0f, shade);
-				
-                if(depth < zbuffer[idx])
+                
+                int idx = (H - 1 - y) * W + x;
+                if (depth <  camera.getZbuffer()[idx])
                 {
-					
-					framebuffer[idx].r = (uint8_t)(colour.r * shade);
-					framebuffer[idx].g = (uint8_t)(colour.g * shade);
-					framebuffer[idx].b = (uint8_t)(colour.b * shade);
-					zbuffer[idx] = depth;
-               
+                    Vec3 normalpx = calculateInterpolatedNormal(triangle, b0, b1, b2);
+                    Vec2 UVpx     = calculateInterpolatedUV(triangle, b0, b1, b2);
+                    normalpx      = applyNormalMap(normalpx, UVpx, normaltxt);
+                    Pixel colour  = sampleTexture(txt, UVpx);
+
+                    float shade = normalpx.x * lightDir.x
+                                + normalpx.y * lightDir.y
+                                + normalpx.z * lightDir.z;
+                    // float shade = 0.5f;
+                    // camera.getFramebuffer()[idx].r = shade * 255;
+                    // camera.getFramebuffer()[idx].g = shade * 255;
+                    // camera.getFramebuffer()[idx].b = shade * 255;
+                    camera.getFramebuffer()[idx].r = (uint8_t)(colour.r * shade);
+                    camera.getFramebuffer()[idx].g = (uint8_t)(colour.g * shade);
+                    camera.getFramebuffer()[idx].b = (uint8_t)(colour.b * shade);
+                    camera.getZbuffer()[idx]       = depth;
                 }
             }
         }
     }
 }
 
-#include <thread>
-// void rasterizeByTile(Mesh mesh, int H, int W, std::vector<Pixel>& framebuffer, std::vector<float> &zbuffer)
-void rasterizeByTile()
-{
-	int numThreads = std::thread::hardware_concurrency();
-	std::cout << numThreads << std::endl;
-	int H = 1080; int W = 1920;
-	int chunksize = (W * H) / numThreads;
-	int chunksizex = W / numThreads;
-	int chunksizey = H;
-	int side = (W*H) / numThreads / 2;
-	int nbrows = (int)(sqrt(numThreads));
-	int nbcolums = (int)(sqrt(numThreads) + 1);
-	int sidex = W / nbcolums;
-	int sidey = H / nbrows;
-	int bonuspx = W % nbrows;
-	int bonuspy = H % nbrows;
-	std::cout << nbrows << ":" << nbcolums << " | " << sidex << ":" << sidey  << " | " << bonuspx << ":" << bonuspy << std::endl;
-	
-	std::cout << chunksize << " : " << chunksizex << "|" << chunksizey << " - " << side << std::endl;
-	for (int i = 0; i < numThreads; i++)
-	{
-		//iteration a travers toutes les chunks
-		for (int x = chunksizex * i / H; x < chunksizex * i + 1; x++)
-		{
-			for (int y = chunksizey * i / W; y < chunksizey * i + 1; y++)
-			{
-				
-			}
-		}
-	}
-}
+// void rasterizeMeshes(const std::vector<Mesh>& meshes, Cam& camera, const std::vector<Mat4>& MVPs)
+// {
+//     int H = camera.getCamH();
+//     int W = camera.getCamW();
 
-// Cam.hpp - passer par référence - probleme je rasterize quun mesh au lieu de tout les meshs
-void rasterizeMesh(Mesh mesh, Cam& camera, Mat4 MVP)
-{
-    std::vector<Triangle2D> tris = renderAmbiant2(mesh,camera,  camera.getCamW(), camera.getCamH(), MVP);
-    for (size_t i = 0; i < tris.size(); i++)
-        rasterizeTriangle(tris[i], camera.getCamH(), camera.getCamW(), camera.getFramebuffer(), camera.getZbuffer(), mesh.getTexture(), mesh.getNormalTxt());
-}
+//     std::vector<std::pair<std::vector<Triangle2D>, std::pair<Texture, Texture>>> meshData;
+//     meshData.reserve(meshes.size());
+//     for (size_t i = 0; i < meshes.size(); i++)
+//     {
+//         std::vector<Triangle2D> tris = renderAmbiant2(meshes[i], camera, W, H, MVPs[i]);
+//         meshData.push_back({ std::move(tris), { meshes[i].getTexture(), meshes[i].getNormalTxt() } });
+//     }
+//     int numThreads = std::thread::hardware_concurrency();
+//     if (numThreads <= 0) numThreads = 4;
 
-int main()
+//     int tileW = W / numThreads;
+
+//     std::vector<std::thread> threads;
+//     threads.reserve(numThreads);
+
+//     for (int t = 0; t < numThreads; t++)
+//     {
+//         int xStart = t * tileW;
+//         int xEnd   = (t == numThreads - 1) ? W : xStart + tileW;
+
+//         threads.emplace_back([=, &meshData, &camera]()
+//         {
+//             auto& fb = camera.getFramebuffer();
+//             auto& zb = camera.getZbuffer();
+
+//             for (auto& [tris, textures] : meshData)
+//                 for (const Triangle2D& tri : tris)
+//                     rasterizeTriangle(tri, H, W, xStart, xEnd, fb, zb, textures.first, textures.second);
+//         });
+//     }
+//     for (auto& th : threads)
+//         th.join();
+
+// }
+void rasterizeMeshes(const std::vector<Mesh>& meshes, Cam& camera, const std::vector<Mat4>& MVPs, DataGlobal& data)
 {
-	rasterizeByTile();
+    int H = camera.getCamH();
+    int W = camera.getCamW();
+    auto t0 = std::chrono::high_resolution_clock::now();
+    std::vector<std::pair<std::vector<Triangle2D>, std::pair<Texture, Texture>>> meshData;
+    meshData.reserve(meshes.size());
+    for (size_t i = 0; i < meshes.size(); i++)
+    {
+        std::vector<Triangle2D> tris = renderAmbiant2(meshes[i], camera, W, H, MVPs[i], data);
+        meshData.push_back({ std::move(tris), { meshes[i].getTexture(), meshes[i].getNormalTxt() } });
+    }
+    auto t1 = std::chrono::high_resolution_clock::now();
+    int numThreads = std::thread::hardware_concurrency();
+    if (numThreads <= 0) numThreads = 4;
+    int tileW = W / numThreads;
+
+    for (int t = 0; t < numThreads; t++)
+    {
+        int xStart = t * tileW;
+        int xEnd   = (t == numThreads - 1) ? W : xStart + tileW;
+
+        data.pool.enqueue([=, &meshData, &camera]()
+        {
+            auto& fb = camera.getFramebuffer();
+            auto& zb = camera.getZbuffer();
+            for (auto& [tris, textures] : meshData)
+                for (const Triangle2D& tri : tris)
+                    rasterizeTriangle(tri, H, W, xStart, xEnd, camera, textures.first, textures.second);
+        });
+    }    
+
+    //compte le nombre de pixel calculer au total actuellement 1/3 du nombre de pxl.
+    // size_t totalPixels = 0;
+    // for (auto& [tris, textures] : meshData)
+    //     for (auto& tri : tris) {
+    //         int minX = std::max(0,   (int)((std::min({tri.a.x, tri.b.x, tri.c.x}) * 0.5f + 0.5f) * W));
+    //         int maxX = std::min(W-1, (int)((std::max({tri.a.x, tri.b.x, tri.c.x}) * 0.5f + 0.5f) * W));
+    //         int minY = std::max(0,   (int)((std::min({tri.a.y, tri.b.y, tri.c.y}) * 0.5f + 0.5f) * H));
+    //         int maxY = std::min(H-1, (int)((std::max({tri.a.y, tri.b.y, tri.c.y}) * 0.5f + 0.5f) * H));
+    //         totalPixels += (maxX - minX) * (maxY - minY);
+    //     }
+    // std::cout << "pixels bbox total : " << totalPixels << "\n";
+
+    data.pool.wait(); // attend que toutes les tuiles soient finies
+    auto t2 = std::chrono::high_resolution_clock::now();
+    // std::cout 
+    //         << "projection : " << std::chrono::duration_cast<std::chrono::milliseconds>(t1-t0).count() << "ms | "
+    //         << "rasterize  : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << "ms\n";
+    // size_t totalTris = 0;
+    // for (auto& [tris, textures] : meshData)
+    //     totalTris += tris.size();
+    // std::cout << "triangles : " << totalTris << "\n";
+    
 }
+// int main()
+// {
+// 	rasterizeByTile();
+// }
