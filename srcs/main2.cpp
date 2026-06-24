@@ -118,7 +118,7 @@ int main(int ac, char **av)
     // meshes.push_back(Mesh("medusa/body.obj", "medusa/texture/bodyColor.png", "textures/normaltest2.png"));
     meshes.push_back(Mesh("medusa/armor.obj", "medusa/texture/armorColor.png", "medusa/texture/armorNormal.png"));
     meshes.push_back(Mesh("medusa/sword.obj", "medusa/texture/headColor.png", "medusa/texture/headNormal.png"));
-    meshes.push_back(Mesh("medusa/tissu.obj", "medusa/texture/tissuColor.png", "medusa/texture/tissuNormal.png"));
+    meshes.push_back(Mesh("medusa/tissu.obj", "medusa/texture/tissuColor.png", "medusa/texture/tissuNormal.png", "medusa/texture/tissuAlpha.png"));
     Cam camera(120);
     DataGlobal data(1200, 800);
     camera.setCamW(data.getResx());
@@ -151,7 +151,7 @@ int main(int ac, char **av)
         double currentTime = glfwGetTime();
         frameCount++;
         if (currentTime - lastTime >= 1.0) {
-            std::cout << "pos = " << meshes[0].getPos().x << "|" << meshes[0].getPos().y << "|" << meshes[0].getPos().z << "\r"<< std::flush;
+            // std::cout << "pos = " << meshes[0].getPos().x << "|" << meshes[0].getPos().y << "|" << meshes[0].getPos().z << " | FPS : " << frameCount << "\r"<< std::flush;
             // std::cout << "FPS: " << frameCount << "\r"<< std::flush;
             frameCount = 0;
             lastTime = currentTime;

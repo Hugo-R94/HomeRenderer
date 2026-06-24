@@ -34,10 +34,12 @@ private:
 	Vec3 				_scale;
 	Texture				_txt;
 	Texture				_normalTxt;
-
+	Texture				_alphaTxt;
+	
 public:
 	Mesh(std::string path);
 	Mesh(std::string path, std::string pathColorMap, std::string pathNormalMap);
+	Mesh(std::string path, std::string pathColorMap, std::string pathNormalMap, std::string alphaMap);
 	~Mesh();
 
 	//getter
@@ -64,6 +66,7 @@ public:
 	const std::vector<Vec2>& getUV() const;
 	const std::vector<float>& getDotFace()const;
 	const Texture& getTexture()const;
+	const Texture& getAlphaTxt()const;
 	const Texture& getNormalTxt()const;
 	void setDotFace(std::vector<float> dotlist);
 	const Vec3& getCenter()const;

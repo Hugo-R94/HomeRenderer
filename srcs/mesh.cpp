@@ -35,6 +35,14 @@ Mesh::Mesh(std::string path, std::string pathColorMap, std::string pathNormalMap
     _normalTxt = loadTexture(pathNormalMap);
 }
 
+Mesh::Mesh(std::string path, std::string pathColorMap, std::string pathNormalMap, std::string alphaMap) : Node3D(), _pathObj(path){
+     if (!path.empty())
+        loadMesh();
+   _txt = loadTexture(pathColorMap);
+    _normalTxt = loadTexture(pathNormalMap);
+	_alphaTxt = loadTexture(alphaMap);
+}
+
 Mesh::~Mesh(){}
 
 // Parse un token de face : "1", "1/2", "1/2/3", "1//3"
@@ -66,6 +74,7 @@ const std::vector<float>& Mesh::getDotFace() const {return _dot;}
 const std::vector<Vec2>& Mesh::getUV()const{return _uvs;}
 const Texture& Mesh::getTexture()const{return _txt;}
 const Texture& Mesh::getNormalTxt()const{return _normalTxt;}
+const Texture& Mesh::getAlphaTxt()const{return _alphaTxt;}
 
 // void Mesh::loadMesh()
 // {

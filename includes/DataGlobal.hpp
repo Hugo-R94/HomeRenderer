@@ -8,6 +8,7 @@ private:
     int _res_x;
     int _res_y;
     int _meshID = 0;
+	// std::vector<Mesh> grid;
 
 public:
     DataGlobal() : _res_x(1920), _res_y(1080) {}
